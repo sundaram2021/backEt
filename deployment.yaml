@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: etcd-backup-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: etcd-backup-controller
+  template:
+    metadata:
+      labels:
+        app: etcd-backup-controller
+    spec:
+      containers:
+        - name: etcd-backup-controller
+          image: sundaram2023/etcd-backup-controller:5
+          volumeMounts:
+            - name: backup-volume
+              mountPath: /backup
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          env:
+            - name: ETCD_ENDPOINT
+              value: "https://127.0.0.1:2379"
+      volumes:
+        - name: backup-volume
+          persistentVolumeClaim:
+            claimName: etcd-backup-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: etcd-backup-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
