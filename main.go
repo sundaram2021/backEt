@@ -15,12 +15,12 @@ import (
 // BackupReconciler handles the backup process
 type BackupReconciler struct {
 	etcdClient *clientv3.Client
-	etcdConfig clientv3.Config // Store the config for snapshot
+	etcdConfig clientv3.Config 
 }
 
 // initEtcdClient initializes the etcd client
 func initEtcdClient() (*clientv3.Client, clientv3.Config, error) {
-	endpoints := []string{"http://127.0.0.1:2379"} // Your etcd endpoint(s)
+	endpoints := []string{"http://127.0.0.1:2379"}
 	config := clientv3.Config{
 		Endpoints:   endpoints,
 		DialTimeout: 5 * time.Second,
@@ -37,7 +37,6 @@ func initEtcdClient() (*clientv3.Client, clientv3.Config, error) {
 func (r *BackupReconciler) takeEtcdSnapshot(ctx context.Context, snapshotFilePath string) error {
 	log.Println("Starting etcd snapshot backup...")
 
-	// Acquire lock to ensure only one backup happens at a time
 	session, err := concurrency.NewSession(r.etcdClient)
 	if err != nil {
 		return fmt.Errorf("failed to create session: %w", err)
@@ -50,10 +49,8 @@ func (r *BackupReconciler) takeEtcdSnapshot(ctx context.Context, snapshotFilePat
 	}
 	defer mutex.Unlock(ctx)
 
-	// Create a logger for snapshot
 	logger, _ := zap.NewProduction()
 
-	// Call the snapshot API
 	if err := snapshot.Save(ctx, logger, r.etcdConfig, snapshotFilePath); err != nil {
 		return fmt.Errorf("failed to save snapshot: %w", err)
 	}
@@ -63,7 +60,6 @@ func (r *BackupReconciler) takeEtcdSnapshot(ctx context.Context, snapshotFilePat
 }
 
 func main() {
-	// Initialize etcd client
 	etcdClient, etcdConfig, err := initEtcdClient()
 	if err != nil {
 		log.Fatalf("Error initializing etcd client: %v", err)
@@ -72,7 +68,6 @@ func main() {
 
 	reconciler := &BackupReconciler{etcdClient: etcdClient, etcdConfig: etcdConfig}
 
-	// Run snapshot process
 	snapshotFile := fmt.Sprintf("/backup/etcd_snapshot_%s.db", time.Now().Format("2006-01-02_15-04-05"))
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
